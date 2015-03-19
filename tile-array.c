@@ -196,6 +196,7 @@ int ta_create(MPI_Comm comm, int ntiles, size_t tilesize, ta_t * tilearray)
 
 int ta_destroy(ta_t * tilearray)
 {
+    MPI_Barrier(tilearray->wincomm);
     MPI_Win_unlock_all(tilearray->win);
     //MPI_Comm_free(&(tilearray->wincomm));
     MPI_Win_free(&(tilearray->win));
