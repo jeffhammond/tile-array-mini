@@ -11,6 +11,8 @@ int main(int argc, char * argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     ta_t g_a;
     ta_create(MPI_COMM_WORLD, np, 1000000, &g_a);
 
