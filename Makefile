@@ -1,14 +1,16 @@
-CC     = mpicc
-CFLAGS = -g -Wall -O2 -std=c99
+#CC     := /opt/mpich/dev/intel/debug/bin/mpicc
+#CFLAGS := -g3 -Wall -O2 -std=c99 -Wl,-no_pie
+CC     := /opt/mpich/dev/clang/debug/bin/mpicc
+CFLAGS := -g3 -Wall -O2 -std=c99
 
-LIBS =
-
+LIBS=
+OBJS=tile-array.o
 TESTS=test-basic.x
 
 all: $(TESTS)
 
-%.x: %.o tile-array.o
-	$(CC) $(CFLAGS) $< $(LIBS) -o $@
+%.x: %.o $(OBJS)
+	$(CC) $(CFLAGS) $< $(OBJS) $(LIBS) -o $@
 
 %.o: %.c tile-array.h
 	$(CC) $(CFLAGS) -c $< -o $@

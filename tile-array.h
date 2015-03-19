@@ -13,18 +13,16 @@ typedef struct
     double * baseptr;
     int      ntiles;
     size_t   tilesize;
-    int      comm_size;
-} tai_t;
-
-typedef tai_t* ta_t;
+    MPI_Comm wincomm;
+} ta_t;
 
 /* END TYPES */
 
 
 /* BEGIN API */
 
-int ta_create(MPI_Comm comm, int ntiles, size_t tilesize, ta_t tilearray);
-int ta_destroy(ta_t tilearray);
+int ta_create(MPI_Comm comm, int ntiles, size_t tilesize, ta_t * tilearray);
+int ta_destroy(ta_t * tilearray);
 
 int ta_get_ntiles(ta_t tilearray);
 size_t ta_get_tilesize(ta_t tilearray);
