@@ -15,7 +15,7 @@ int main(int argc, char * argv[])
 
     ta_t g_a;
     ta_create(MPI_COMM_WORLD, np, 1000000, &g_a);
-
+    ta_memset_array(g_a, (double)(me+1));
 
     ta_destroy(&g_a);
 

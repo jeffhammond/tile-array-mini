@@ -11,7 +11,8 @@ typedef struct
 {
     MPI_Win  win;
     double * baseptr;
-    int      ntiles;
+    int      total_ntiles;
+    int      local_ntiles;
     size_t   tilesize;
     MPI_Comm wincomm;
 } ta_t;

@@ -13,7 +13,7 @@ int ta_get_comm(ta_t tilearray, MPI_Comm old, MPI_Comm * new)
 
 int ta_get_ntiles(ta_t tilearray)
 {
-    return (tilearray.ntiles);
+    return (tilearray.total_ntiles);
 }
 
 size_t ta_get_tilesize(ta_t tilearray)
@@ -29,7 +29,7 @@ int ta_memset_array(ta_t tilearray, double value)
     MPI_Barrier(tilearray.wincomm);
 
     double * ptr = tilearray.baseptr;
-    size_t n = (tilearray.tilesize) * (tilearray.ntiles);
+    size_t n = (tilearray.tilesize) * (tilearray.local_ntiles);
     for (size_t i=0; i<n; i++) {
         ptr[i] = value;
     }
@@ -53,8 +53,8 @@ int ta_get_tile(ta_t tilearray, int tile, double * buffer)
 {
     int rc;
 
-    if (tile>(tilearray.ntiles)) {
-        printf("tile (%d) out-of-range (%d) \n", tile, tilearray.ntiles);
+    if (tile>(tilearray.total_ntiles)) {
+        printf("tile (%d) out-of-range (%d) \n", tile, tilearray.total_ntiles);
     }
 
     int comm_size;
@@ -79,8 +79,8 @@ int ta_put_tile(ta_t tilearray, int tile, const double * buffer)
 {
     int rc;
 
-    if (tile>(tilearray.ntiles)) {
-        printf("tile (%d) out-of-range (%d) \n", tile, tilearray.ntiles);
+    if (tile>(tilearray.total_ntiles)) {
+        printf("tile (%d) out-of-range (%d) \n", tile, tilearray.total_ntiles);
     }
 
     int comm_size;
@@ -105,8 +105,8 @@ int ta_sum_tile(ta_t tilearray, int tile, const double * buffer)
 {
     int rc;
 
-    if (tile>(tilearray.ntiles)) {
-        printf("tile (%d) out-of-range (%d) \n", tile, tilearray.ntiles);
+    if (tile>(tilearray.total_ntiles)) {
+        printf("tile (%d) out-of-range (%d) \n", tile, tilearray.total_ntiles);
     }
 
     int comm_size;
@@ -140,32 +140,35 @@ int ta_create(MPI_Comm comm, int ntiles, size_t tilesize, ta_t * tilearray)
     MPI_Comm_rank(tilearray->wincomm, &comm_rank);
     MPI_Comm_size(tilearray->wincomm, &comm_size);
 
-    tilearray->ntiles    = ntiles;
-    tilearray->tilesize  = tilesize;
+    tilearray->total_ntiles = ntiles;
+    tilearray->tilesize     = tilesize;
 
-    int my_ntiles = 0;
+    int local_ntiles = 0;
     {
         int rem = ntiles % comm_size;
         int tmp = ntiles / comm_size;
         if (comm_rank < rem ) tmp++;
-        my_ntiles = tmp;
+        local_ntiles = tmp;
 #ifdef TA_DEBUG
         if (comm_rank==0) {
             printf("nprocs    = %d\n", comm_size);
             printf("myrank    = %d\n", comm_rank);
             printf("ntiles    = %d\n", ntiles);
         }
-        printf("%d: my_ntiles = %d\n", comm_rank, my_ntiles);
+        printf("%d: local_ntiles = %d\n", comm_rank, local_ntiles);
 
-        int sum_my_ntiles = 0;
-        MPI_Allreduce(&my_ntiles, &sum_my_ntiles, 1, MPI_INT, MPI_SUM, comm);
+        int sum_local_ntiles = 0;
+        MPI_Allreduce(&local_ntiles, &sum_local_ntiles, 1, MPI_INT, MPI_SUM, comm);
         if (comm_rank==0) {
-            printf("sum_my_ntiles = %d\n", sum_my_ntiles);
+            printf("sum_local_ntiles = %d\n", sum_local_ntiles);
         }
 #endif
     }
 
-    MPI_Aint winsize = (MPI_Aint)tilesize * my_ntiles * sizeof(double);
+    MPI_Aint winsize = (MPI_Aint)tilesize * local_ntiles * sizeof(double);
+#ifdef TA_DEBUG
+    printf("%d: winsize = %ld\n", comm_rank, winsize);
+#endif
 
     MPI_Info winfo = MPI_INFO_NULL;
     //MPI_Info_create(&winfo);
@@ -181,8 +184,9 @@ int ta_create(MPI_Comm comm, int ntiles, size_t tilesize, ta_t * tilearray)
     /* Zero array */
     {
         double * ptr = tilearray->baseptr;
-        size_t n = (tilearray->tilesize) * (tilearray->ntiles);
+        size_t n = tilesize * local_ntiles;
         for (size_t i=0; i<n; i++) {
+            //printf("%d: i=%ld\n", comm_rank, i); fflush(stdout);
             ptr[i] = 0.0;
         }
         MPI_Win_sync(tilearray->win);
