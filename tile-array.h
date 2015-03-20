@@ -8,6 +8,8 @@
 
 /* BEGIN TYPES */
 
+typedef enum { GET, PUT, SUM } rma_e;
+
 typedef struct
 {
     MPI_Win  win;
@@ -21,6 +23,8 @@ typedef struct
     int      comm_size;
 #endif
 } ta_t;
+
+typedef ta_t cntr_t;
 
 /* END TYPES */
 
@@ -41,6 +45,11 @@ int ta_sum_tile(ta_t tilearray, int tile, const double * buffer);
 int ta_get_comm(ta_t tilearray, MPI_Comm old, MPI_Comm * new);
 int ta_get_ntiles(ta_t tilearray);
 size_t ta_get_tilesize(ta_t tilearray);
+
+int cntr_create(MPI_Comm comm, ta_t * cntr);
+int cntr_destroy(ta_t * cntr);
+int cntr_zero(ta_t tilearray);
+int cntr_fadd(ta_t tilearray, long incr, long * result);
 
 /* END API */
 

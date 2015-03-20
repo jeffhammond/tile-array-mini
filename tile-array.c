@@ -23,7 +23,6 @@ int tai_create(MPI_Comm comm, MPI_Datatype dt, int ntiles, size_t tilesize, ta_t
 #ifdef TA_DEBUG
         if (comm_rank==0) {
             printf("nprocs    = %d\n", comm_size);
-            printf("myrank    = %d\n", comm_rank);
             printf("ntiles    = %d\n", ntiles);
         }
         printf("%d: local_ntiles = %d\n", comm_rank, local_ntiles);
@@ -176,7 +175,7 @@ int ta_sync_array(ta_t tilearray)
 
 /* DATA MOVEMENT */
 
-int ta_get_tile(ta_t tilearray, int tile, double * buffer)
+int tai_rma_tile(ta_t tilearray, int tile, double * buffer, rma_e rma)
 {
     int rc;
 
@@ -196,74 +195,47 @@ int ta_get_tile(ta_t tilearray, int tile, double * buffer)
     int      target_proc = tile % comm_size;
     int      tile_offset = tile / comm_size;
     MPI_Aint win_offset  = tilesize * (MPI_Aint)tile_offset;
+#ifdef TA_DEBUG
+    int comm_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+    printf("%d: trgt=%d, toff=%d, woff=%ld\n", comm_rank, target_proc, tile_offset, win_offset);
+#endif
     
-    rc = MPI_Get(buffer, tilesize, MPI_DOUBLE,
-                 target_proc, win_offset, tilesize, MPI_DOUBLE,
-                 tilearray.win);
+    if (rma==GET) {
+        rc = MPI_Get(buffer, tilesize, MPI_DOUBLE,
+                     target_proc, win_offset, tilesize, MPI_DOUBLE,
+                     tilearray.win);
+    } else if (rma==PUT) {
+        rc = MPI_Put(buffer, tilesize, MPI_DOUBLE,
+                     target_proc, win_offset, tilesize, MPI_DOUBLE,
+                     tilearray.win);
+    } else if (rma==SUM) {
+    rc = MPI_Accumulate(buffer, tilesize, MPI_DOUBLE,
+                        target_proc, win_offset, tilesize, MPI_DOUBLE,
+                        MPI_SUM, tilearray.win);
+    } else  {
+        printf("Impossible\n");
+        MPI_Abort(MPI_COMM_WORLD, rma);
+    }
 
     MPI_Win_flush_local(target_proc, tilearray.win);
 
     return rc;
+}
+
+int ta_get_tile(ta_t tilearray, int tile, double * buffer)
+{
+    return tai_rma_tile(tilearray, tile, buffer, GET);
 }
 
 int ta_put_tile(ta_t tilearray, int tile, const double * buffer)
 {
-    int rc;
-
-    if (tile>(tilearray.total_ntiles)) {
-        printf("tile (%d) out-of-range (%d) \n", tile, tilearray.total_ntiles);
-    }
-
-    int comm_size;
-#ifdef TA_DEBUG
-    MPI_Comm_size(tilearray.wincomm, &comm_size);
-#else
-    comm_size = tilearray.comm_size;
-#endif
-
-    int tilesize  = (tilearray.tilesize);
-
-    int      target_proc = tile % comm_size;
-    int      tile_offset = tile / comm_size;
-    MPI_Aint win_offset  = tilesize * (MPI_Aint)tile_offset;
-    
-    rc = MPI_Put((double*)buffer, tilesize, MPI_DOUBLE,
-                 target_proc, win_offset, tilesize, MPI_DOUBLE,
-                 tilearray.win);
-
-    MPI_Win_flush_local(target_proc, tilearray.win);
-
-    return rc;
+    return tai_rma_tile(tilearray, tile, (double*)buffer, PUT);
 }
 
 int ta_sum_tile(ta_t tilearray, int tile, const double * buffer)
 {
-    int rc;
-
-    if (tile>(tilearray.total_ntiles)) {
-        printf("tile (%d) out-of-range (%d) \n", tile, tilearray.total_ntiles);
-    }
-
-    int comm_size;
-#ifdef TA_DEBUG
-    MPI_Comm_size(tilearray.wincomm, &comm_size);
-#else
-    comm_size = tilearray.comm_size;
-#endif
-
-    int tilesize  = (tilearray.tilesize);
-
-    int      target_proc = tile % comm_size;
-    int      tile_offset = tile / comm_size;
-    MPI_Aint win_offset  = tilesize * (MPI_Aint)tile_offset;
-    
-    rc = MPI_Accumulate((double*)buffer, tilesize, MPI_DOUBLE,
-                        target_proc, win_offset, tilesize, MPI_DOUBLE,
-                        MPI_SUM, tilearray.win);
-
-    MPI_Win_flush_local(target_proc, tilearray.win);
-
-    return rc;
+    return tai_rma_tile(tilearray, tile, (double*)buffer, SUM);
 }
 
 /* ALLOCATION and DEALLOCATION */
@@ -286,17 +258,17 @@ int ta_destroy(ta_t * tilearray)
 
 /* NXTVAL type thing */
 
-int cntr_create(MPI_Comm comm, ta_t * cntr)
+int cntr_create(MPI_Comm comm, cntr_t * cntr)
 {
     return tai_create(comm, MPI_LONG, 1, 1, cntr);
 }
 
-int cntr_destroy(ta_t * cntr)
+int cntr_destroy(cntr_t * cntr)
 {
     return ta_destroy(cntr);
 }
 
-int cntr_zero(ta_t tilearray)
+int cntr_zero(cntr_t tilearray)
 {
     long zero = 0;
     MPI_Fetch_and_op(&zero, NULL, MPI_LONG, 0, (MPI_Aint)0, MPI_REPLACE, tilearray.win);
@@ -304,7 +276,7 @@ int cntr_zero(ta_t tilearray)
     return MPI_SUCCESS;
 }
 
-int cntr_fadd(ta_t tilearray, long incr, long * result)
+int cntr_fadd(cntr_t tilearray, long incr, long * result)
 {
     MPI_Fetch_and_op(&incr, result, MPI_LONG, 0, (MPI_Aint)0, MPI_SUM, tilearray.win);
     MPI_Win_flush(0, tilearray.win);
