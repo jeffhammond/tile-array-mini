@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <mpi.h>
 
@@ -10,11 +11,15 @@
 typedef struct
 {
     MPI_Win  win;
-    double * baseptr;
+    void *   baseptr;
     int      total_ntiles;
     int      local_ntiles;
     size_t   tilesize;
+#ifdef TA_DEBUG
     MPI_Comm wincomm;
+#else
+    int      comm_size;
+#endif
 } ta_t;
 
 /* END TYPES */

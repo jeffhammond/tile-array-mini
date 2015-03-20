@@ -17,11 +17,22 @@ int main(int argc, char * argv[])
 
     size_t count = (argc>1) ? atol(argv[1]) : 1+2*getpagesize();
 
-    ta_t g_a;
-    ta_create(MPI_COMM_WORLD, np, count, &g_a);
+    ta_t g_a, g_b, g_c;
+
+    ta_create(MPI_COMM_WORLD, 1, count, &g_a);
     ta_memset_array(g_a, (double)(me+1));
     if (count<100) ta_print_array(g_a);
     ta_destroy(&g_a);
+
+    ta_create(MPI_COMM_WORLD, np, count, &g_b);
+    ta_memset_array(g_b, (double)(me+1));
+    if (count<100) ta_print_array(g_b);
+    ta_destroy(&g_b);
+
+    ta_create(MPI_COMM_WORLD, np*np, count, &g_c);
+    ta_memset_array(g_c, (double)(me+1));
+    if (count<100) ta_print_array(g_c);
+    ta_destroy(&g_c);
 
     MPI_Finalize();
     return 0;
