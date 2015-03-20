@@ -26,6 +26,7 @@ int ta_create(MPI_Comm comm, int ntiles, size_t tilesize, ta_t * tilearray);
 int ta_destroy(ta_t * tilearray);
 
 int ta_memset_array(ta_t tilearray, double value);
+int ta_print_array(ta_t tilearray);
 int ta_sync_array(ta_t tilearray);
 
 int ta_get_tile(ta_t tilearray, int tile, double * buffer);

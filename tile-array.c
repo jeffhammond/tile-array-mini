@@ -23,6 +23,28 @@ size_t ta_get_tilesize(ta_t tilearray)
 
 /* DATA PARALLEL OPS */
 
+int ta_print_array(ta_t tilearray)
+{
+    MPI_Barrier(tilearray.wincomm);
+
+    int comm_rank;
+    MPI_Comm_rank(tilearray.wincomm, &comm_rank);
+
+    double * ptr = tilearray.baseptr;
+    printf("tilesize = %ld \n", tilearray.tilesize);
+    printf("local_ntiles = %d \n", tilearray.local_ntiles);
+    size_t n = (tilearray.tilesize) * (tilearray.local_ntiles);
+    printf("%d: printing %ld\n", comm_rank, n);
+    for (size_t i=0; i<n; i++) {
+        printf("%d: [%ld]=%lf\n", comm_rank, i, ptr[i]);
+    }
+    fflush(stdout);
+
+    MPI_Barrier(tilearray.wincomm);
+
+    return MPI_SUCCESS;
+}
+
 int ta_memset_array(ta_t tilearray, double value)
 {
     MPI_Win_sync(tilearray.win);
@@ -140,9 +162,6 @@ int ta_create(MPI_Comm comm, int ntiles, size_t tilesize, ta_t * tilearray)
     MPI_Comm_rank(tilearray->wincomm, &comm_rank);
     MPI_Comm_size(tilearray->wincomm, &comm_size);
 
-    tilearray->total_ntiles = ntiles;
-    tilearray->tilesize     = tilesize;
-
     int local_ntiles = 0;
     {
         int rem = ntiles % comm_size;
@@ -164,6 +183,10 @@ int ta_create(MPI_Comm comm, int ntiles, size_t tilesize, ta_t * tilearray)
         }
 #endif
     }
+
+    tilearray->total_ntiles = ntiles;
+    tilearray->local_ntiles = local_ntiles;
+    tilearray->tilesize     = tilesize;
 
     MPI_Aint winsize = (MPI_Aint)tilesize * local_ntiles * sizeof(double);
 #ifdef TA_DEBUG

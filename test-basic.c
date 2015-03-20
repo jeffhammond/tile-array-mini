@@ -1,3 +1,5 @@
+#include <unistd.h> /* getpagesize() */
+
 #include "tile-array.h"
 
 int main(int argc, char * argv[])
@@ -13,10 +15,12 @@ int main(int argc, char * argv[])
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    ta_t g_a;
-    ta_create(MPI_COMM_WORLD, np, 1000000, &g_a);
-    ta_memset_array(g_a, (double)(me+1));
+    size_t count = (argc>1) ? atol(argv[1]) : 1+2*getpagesize();
 
+    ta_t g_a;
+    ta_create(MPI_COMM_WORLD, np, count, &g_a);
+    ta_memset_array(g_a, (double)(me+1));
+    if (count<100) ta_print_array(g_a);
     ta_destroy(&g_a);
 
     MPI_Finalize();
