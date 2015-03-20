@@ -6,7 +6,7 @@ int tai_create(MPI_Comm comm, MPI_Datatype dt, int ntiles, size_t tilesize, ta_t
 {
     int rc;
 
-#ifdef TA_DEBUG
+#ifdef TA_COMM_DUP
     MPI_Comm_dup(comm, &(tilearray->wincomm));
 #endif
 
@@ -122,7 +122,7 @@ int ta_print_array(ta_t tilearray)
     int comm_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 
-#ifdef TA_DEBUG
+#ifdef TA_COMM_DUP
     MPI_Barrier(tilearray.wincomm);
 #endif
 
@@ -136,7 +136,7 @@ int ta_print_array(ta_t tilearray)
     }
     fflush(stdout);
 
-#ifdef TA_DEBUG
+#ifdef TA_COMM_DUP
     MPI_Barrier(tilearray.wincomm);
 #endif
 
@@ -145,7 +145,7 @@ int ta_print_array(ta_t tilearray)
 
 int ta_memset_array(ta_t tilearray, double value)
 {
-#ifdef TA_DEBUG
+#ifdef TA_COMM_DUP
     MPI_Barrier(tilearray.wincomm);
 #endif
 
@@ -159,7 +159,7 @@ int ta_memset_array(ta_t tilearray, double value)
 
     MPI_Win_sync(tilearray.win);
 
-#ifdef TA_DEBUG
+#ifdef TA_COMM_DUP
     MPI_Barrier(tilearray.wincomm);
 #endif
 
@@ -184,7 +184,7 @@ int tai_rma_tile(ta_t tilearray, int tile, double * buffer, rma_e rma)
     }
 
     int comm_size;
-#ifdef TA_DEBUG
+#ifdef TA_COMM_DUP
     MPI_Comm_size(tilearray.wincomm, &comm_size);
 #else
     comm_size = tilearray.comm_size;
@@ -247,7 +247,7 @@ int ta_create(MPI_Comm comm, int ntiles, size_t tilesize, ta_t * tilearray)
 
 int ta_destroy(ta_t * tilearray)
 {
-#ifdef TA_DEBUG
+#ifdef TA_COMM_DUP
     MPI_Barrier(tilearray->wincomm);
     MPI_Comm_free(&(tilearray->wincomm));
 #endif

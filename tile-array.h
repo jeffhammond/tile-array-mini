@@ -4,7 +4,8 @@
 
 #include <mpi.h>
 
-#define TA_DEBUG
+//#define TA_DEBUG
+#define TA_COMM_DUP
 
 /* BEGIN TYPES */
 
@@ -17,7 +18,7 @@ typedef struct
     int      total_ntiles;
     int      local_ntiles;
     size_t   tilesize;
-#ifdef TA_DEBUG
+#ifdef TA_COMM_DUP
     MPI_Comm wincomm;
 #else
     int      comm_size;

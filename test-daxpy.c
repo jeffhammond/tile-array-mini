@@ -20,11 +20,12 @@ int main(int argc, char * argv[])
 
     ta_t g_x, g_y;
 
-    ta_create(MPI_COMM_WORLD, 8*np, count, &g_x);
-    ta_create(MPI_COMM_WORLD, 8*np, count, &g_y);
+    int ntiles = np*6;
+    ta_create(MPI_COMM_WORLD, ntiles, count, &g_x);
+    ta_create(MPI_COMM_WORLD, ntiles, count, &g_y);
+
     ta_memset_array(g_x, 10.0);
     ta_memset_array(g_y, 0.3333);
-    MPI_Barrier(MPI_COMM_WORLD);
 
     cntr_t nxtval;
     cntr_create(MPI_COMM_WORLD, &nxtval);
@@ -34,10 +35,11 @@ int main(int argc, char * argv[])
 
     const double alpha = 0.7;
 
-    long myturn = 0, counter;
-    for (size_t t=0; t<(8*np); t++) {
-        cntr_fadd(nxtval, 1, &counter);
-        printf("rank %d t=%ld counter=%ld\n", me, t, counter); fflush(stdout);
+    long myturn = 0;
+    long counter;
+    cntr_fadd(nxtval, 1, &counter);
+    for (size_t t=0; t<ntiles; t++) {
+        /* printf("rank %d t=%ld counter=%ld\n", me, t, counter); fflush(stdout); */
         if (t==counter) {
             printf("rank %d got task %ld\n", me, t); fflush(stdout);
             double * tmp = malloc(count * sizeof(double));
@@ -45,6 +47,7 @@ int main(int argc, char * argv[])
             for (size_t i=0; i<count; i++) tmp[i] *= alpha;
             ta_sum_tile(g_y, t, tmp);
             free(tmp);
+            cntr_fadd(nxtval, 1, &counter);
         }
     }
     ta_sync_array(g_y);
