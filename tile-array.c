@@ -180,7 +180,7 @@ int tai_rma_tile(ta_t tilearray, int tile, double * buffer, rma_e rma)
     int rc;
 
     if (tile>(tilearray.total_ntiles)) {
-        printf("tile (%d) out-of-range (%d) \n", tile, tilearray.total_ntiles);
+        printf("tai_rma_tile: tile (%d) out-of-range (%d) \n", tile, tilearray.total_ntiles);
     }
 
     int comm_size;
@@ -198,7 +198,7 @@ int tai_rma_tile(ta_t tilearray, int tile, double * buffer, rma_e rma)
 #ifdef TA_DEBUG
     int comm_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-    printf("%d: trgt=%d, toff=%d, woff=%ld\n", comm_rank, target_proc, tile_offset, win_offset);
+    printf("%d: RMA trgt=%d, toff=%d, woff=%ld\n", comm_rank, target_proc, tile_offset, win_offset);
 #endif
     
     if (rma==GET) {

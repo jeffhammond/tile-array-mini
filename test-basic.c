@@ -1,4 +1,5 @@
 #include <unistd.h> /* getpagesize() */
+#include <math.h>
 
 #include "tile-array.h"
 
@@ -21,6 +22,11 @@ int main(int argc, char * argv[])
 
     ta_create(MPI_COMM_WORLD, 1, count, &g_a);
     ta_memset_array(g_a, (double)(me+1));
+    if (count<100) ta_print_array(g_a);
+    double * tmp = malloc(count * sizeof(double));
+    for (int i=0; i<count; i++) tmp[i] = exp(1.+(double)i/count);
+    ta_sum_tile(g_a, 0, tmp);
+    ta_sync_array(g_a);
     if (count<100) ta_print_array(g_a);
     ta_destroy(&g_a);
 
