@@ -5,7 +5,7 @@ CFLAGS := -g3 -Wall -O2 -std=c99 -Wl,-no_pie
 
 LIBS=
 OBJS=tile-array.o
-TESTS=test-basic.x test-cntr.x
+TESTS=test-basic.x test-cntr.x test-daxpy.x
 
 all: $(TESTS)
 
