@@ -20,6 +20,9 @@ int main(int argc, char * argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
+    /* times to increment counter */
+    int reps = (argc>1) ? atoi(argv[1]) : 10000;
+
     MPI_Barrier(MPI_COMM_WORLD);
 
     cntr_t nxtval;
@@ -28,7 +31,7 @@ int main(int argc, char * argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 
     PRAGMA_NOVECTOR
-    for (int i=0; i<np; i++) {
+    for (int i=0; i<reps; i++) {
         long out;
         cntr_fadd(nxtval, 1, &out);
     }
@@ -37,7 +40,7 @@ int main(int argc, char * argv[])
     long total;
     if (me==0) {
         cntr_read(nxtval, &total);
-        printf("total = %ld\n", total);
+        printf("total = %ld (correct=%d)\n", total, reps*np);
         fflush(stdout);
     }
 

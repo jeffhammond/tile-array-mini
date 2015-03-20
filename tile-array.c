@@ -30,7 +30,7 @@ int tai_create(MPI_Comm comm, MPI_Datatype dt, int ntiles, size_t tilesize, ta_t
         int sum_local_ntiles = 0;
         MPI_Allreduce(&local_ntiles, &sum_local_ntiles, 1, MPI_INT, MPI_SUM, comm);
         if (comm_rank==0) {
-            printf("sum_local_ntiles = %d\n", sum_local_ntiles);
+            printf("SUM of local_ntiles = %d\n", sum_local_ntiles);
         }
 #endif
     }
@@ -44,7 +44,7 @@ int tai_create(MPI_Comm comm, MPI_Datatype dt, int ntiles, size_t tilesize, ta_t
 
     MPI_Aint winsize = (MPI_Aint)tilesize * local_ntiles * typesize;
 #ifdef TA_DEBUG
-    printf("%d: winsize = %ld\n", comm_rank, winsize);
+    printf("%d: winsize = %ld bytes\n", comm_rank, winsize);
 #endif
 
     MPI_Info winfo = MPI_INFO_NULL;
@@ -270,8 +270,8 @@ int cntr_destroy(cntr_t * cntr)
 
 int cntr_zero(cntr_t tilearray)
 {
-    long zero = 0;
-    MPI_Fetch_and_op(&zero, NULL, MPI_LONG, 0, (MPI_Aint)0, MPI_REPLACE, tilearray.win);
+    long zero = 0, junk;
+    MPI_Fetch_and_op(&zero, &junk, MPI_LONG, 0, (MPI_Aint)0, MPI_REPLACE, tilearray.win);
     MPI_Win_flush(0, tilearray.win);
     return MPI_SUCCESS;
 }
