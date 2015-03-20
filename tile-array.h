@@ -49,6 +49,7 @@ size_t ta_get_tilesize(ta_t tilearray);
 int cntr_create(MPI_Comm comm, ta_t * cntr);
 int cntr_destroy(ta_t * cntr);
 int cntr_zero(ta_t tilearray);
+int cntr_read(cntr_t tilearray, long * result);
 int cntr_fadd(ta_t tilearray, long incr, long * result);
 
 /* END API */

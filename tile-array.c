@@ -283,4 +283,11 @@ int cntr_fadd(cntr_t tilearray, long incr, long * result)
     return MPI_SUCCESS;
 }
 
+int cntr_read(cntr_t tilearray, long * result)
+{
+    MPI_Fetch_and_op(NULL, result, MPI_LONG, 0, (MPI_Aint)0, MPI_NO_OP, tilearray.win);
+    MPI_Win_flush(0, tilearray.win);
+    return MPI_SUCCESS;
+}
+
 /* THE END */
