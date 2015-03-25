@@ -39,7 +39,6 @@ int main(int argc, char * argv[])
     long counter;
     cntr_fadd(nxtval, 1, &counter);
     for (size_t t=0; t<ntiles; t++) {
-        /* printf("rank %d t=%ld counter=%ld\n", me, t, counter); fflush(stdout); */
         if (t==counter) {
             printf("rank %d got task %ld\n", me, t); fflush(stdout);
             double * tmp = malloc(count * sizeof(double));
