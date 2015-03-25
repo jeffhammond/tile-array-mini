@@ -29,7 +29,7 @@ int main(int argc, char * argv[])
      *    |000X|
      *    +----+
      *              */
-    size_t block_offset[4][4] = {{ 0, 1,-1,-1},
+    ssize_t block_offset[4][4] = {{ 0, 1,-1,-1},
                                   { 2, 3,-1,-1},
                                   {-1,-1, 4,-1},
                                   {-1,-1,-1, 5}};
