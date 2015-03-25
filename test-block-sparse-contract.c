@@ -55,12 +55,11 @@ int main(int argc, char * argv[])
     for (int i=0; i<4; i++) {
       for (int j=0; j<4; j++) {
         for (int k=0; k<4; k++) {
-          if (block_offset[i][j] >= 0) {
-          if (block_offset[i][k] >= 0) {
-          if (block_offset[k][j] >= 0) {
-          if (counter==taskid) {
-              printf("rank %d got task (%d,%d,%d)\n", me, i, j, k); fflush(stdout);
-              printf("block_offset[i][k] = %ld\n", block_offset[i][k]);
+          if ((block_offset[i][j] >= 0) &&
+              (block_offset[i][k] >= 0) &&
+              (block_offset[k][j] >= 0)) {
+            if (counter==taskid) {
+              printf("rank %d counter %ld taskid %ld (%d,%d,%d)\n", me, counter, taskid, i, j, k); fflush(stdout);
               double * t_a = malloc(count * sizeof(double));
               double * t_b = malloc(count * sizeof(double));
               double * t_c = malloc(count * sizeof(double));
@@ -72,11 +71,9 @@ int main(int argc, char * argv[])
               free(t_b);
               free(t_c);
               cntr_fadd(nxtval, 1, &counter);
+            }
+            taskid++;
           }
-          }
-          }
-          }
-          taskid++;
         }
       }
     }
