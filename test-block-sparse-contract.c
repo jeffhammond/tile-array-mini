@@ -36,6 +36,10 @@ int main(int argc, char * argv[])
 
     int ntiles = 6;
     ta_create(MPI_COMM_WORLD, ntiles, count, &g_x);
+    ta_create(MPI_COMM_WORLD, ntiles, count, &g_y);
+
+    ta_memset_array(g_x, 1.0);
+    ta_memset_array(g_y, 1.0);
 
     cntr_t nxtval;
     cntr_create(MPI_COMM_WORLD, &nxtval);
@@ -43,6 +47,7 @@ int main(int argc, char * argv[])
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+    long myturn = 0;
     long counter = 0;
     cntr_fadd(nxtval, 1, &counter);
     for (int i=0; i<4; i++) {
@@ -58,13 +63,14 @@ int main(int argc, char * argv[])
         }
       }
     }
-    ta_sync_array(g_x);
+    ta_sync_array(g_y);
 
-    if (count<100) ta_print_array(g_x);
+    if (count<100) ta_print_array(g_y);
 
     cntr_destroy(&nxtval);
 
     ta_destroy(&g_x);
+    ta_destroy(&g_y);
 
     MPI_Finalize();
     return 0;

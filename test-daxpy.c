@@ -35,7 +35,6 @@ int main(int argc, char * argv[])
 
     const double alpha = 0.7;
 
-    long myturn = 0;
     long counter;
     cntr_fadd(nxtval, 1, &counter);
     for (size_t t=0; t<ntiles; t++) {
