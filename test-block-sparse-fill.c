@@ -18,14 +18,24 @@ int main(int argc, char * argv[])
 
     size_t count = (argc>1) ? atol(argv[1]) : 1+2*getpagesize();
 
-    ta_t g_x, g_y;
+    ta_t g_x;
 
-    int ntiles = np*6;
+    /* A block-sparse matrix with the following fill:
+     *
+     *    +----+
+     *    |XX00|
+     *    |XX00|
+     *    |00X0|
+     *    |000X|
+     *    +----+
+     *              */
+    size_t block_offset[4][4] = {{ 0, 1,-1,-1},
+                                  { 2, 3,-1,-1},
+                                  {-1,-1, 4,-1},
+                                  {-1,-1,-1, 5}};
+
+    int ntiles = 6;
     ta_create(MPI_COMM_WORLD, ntiles, count, &g_x);
-    ta_create(MPI_COMM_WORLD, ntiles, count, &g_y);
-
-    ta_memset_array(g_x, 10.0);
-    ta_memset_array(g_y, 0.3333);
 
     cntr_t nxtval;
     cntr_create(MPI_COMM_WORLD, &nxtval);
@@ -33,30 +43,29 @@ int main(int argc, char * argv[])
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    const double alpha = 0.7;
-
     long myturn = 0;
-    long counter;
+    long counter = 0;
     cntr_fadd(nxtval, 1, &counter);
-    for (size_t t=0; t<ntiles; t++) {
-        if (t==counter) {
-            printf("rank %d got task %ld\n", me, t); fflush(stdout);
+    for (int i=0; i<4; i++) {
+      for (int j=0; j<4; j++) {
+        if (block_offset[i][j]==counter) {
+            printf("rank %d got task (%d,%d)\n", me, i, j); fflush(stdout);
             double * tmp = malloc(count * sizeof(double));
-            ta_get_tile(g_x, t, tmp);
-            for (size_t i=0; i<count; i++) tmp[i] *= alpha;
-            ta_sum_tile(g_y, t, tmp);
+            ta_get_tile(g_x, block_offset[i][j], tmp);
+            for (size_t k=0; k<count; k++) tmp[k] = 1.+block_offset[i][j];
+            ta_put_tile(g_x, block_offset[i][j], tmp);
             free(tmp);
             cntr_fadd(nxtval, 1, &counter);
         }
+      }
     }
-    ta_sync_array(g_y);
+    ta_sync_array(g_x);
 
-    if (count<100) ta_print_array(g_y);
+    if (count<100) ta_print_array(g_x);
 
     cntr_destroy(&nxtval);
 
     ta_destroy(&g_x);
-    ta_destroy(&g_y);
 
     MPI_Finalize();
     return 0;
