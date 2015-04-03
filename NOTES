@@ -1,0 +1,10 @@
+1) MPI only
+2) MPI w/ OpenMP in the compute loop - done via MKL
+3) MPI+OpenMP on tile loops w/ MPI_THREAD_MULTIPLE 
+4) MPI+OpenMP on tile loops w/ MPI_THREAD_SERIALIZE and #omp critical around MPI calls
+ta_ and cntr_ do MPI-3 calls
+5) double-buffered endpoints 
+5b) request-based RMA
+5c) overlapping windows
+6) "omp parallel for collapse(3)" around (i,j,k)
+7) task parallelism
