@@ -2,8 +2,8 @@
 
 void matmul(int m, int n, int k, const double * restrict a, const double * restrict b, double * restrict c, bool accumulate)
 {
-    const double alpha = (accumulate ? 1.0 : 0.0);
-    const double beta  = 1.0;
+    const double alpha = 1.0;
+    const double beta  = (accumulate ? 1.0 : 0.0);
     const int rowa=m, rowc=m;
     const int colb=n, colc=n;
     const int cola=k, rowb=k;
