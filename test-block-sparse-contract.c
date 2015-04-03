@@ -23,6 +23,7 @@ int main(int argc, char * argv[])
 
     ta_t g_a, g_b, g_c;
 
+#if PROBLEM_SIZE==4
     /* A block-sparse matrix with the following fill:
      *
      *    +----+
@@ -32,12 +33,29 @@ int main(int argc, char * argv[])
      *    |000X|
      *    +----+
      *              */
+    int ntiles = 6;
+    int tilesdim = 4;
     ssize_t block_offset[4][4] = {{ 0, 1,-1,-1},
                                   { 2, 3,-1,-1},
                                   {-1,-1, 4,-1},
                                   {-1,-1,-1, 5}};
+#else
+    int ntiles = 54;
+    int tilesdim = 12;
+    ssize_t block_offset[12][12] = {{ 0, 1, 2, 3, 4, 5,-1,-1,-1,-1,-1,-1},
+                                    { 6, 7, 8, 9,10,11,-1,-1,-1,-1,-1,-1},
+                                    {12,13,14,15,16,17,-1,-1,-1,-1,-1,-1},
+                                    {18,19,20,21,22,23,-1,-1,-1,-1,-1,-1},
+                                    {24,25,26,27,28,29,-1,-1,-1,-1,-1,-1},
+                                    {30,31,32,33,34,35,-1,-1,-1,-1,-1,-1},
+                                    {-1,-1,-1,-1,-1,-1,36,37,38,-1,-1,-1},
+                                    {-1,-1,-1,-1,-1,-1,39,40,41,-1,-1,-1},
+                                    {-1,-1,-1,-1,-1,-1,42,43,44,-1,-1,-1},
+                                    {-1,-1,-1,-1,-1,-1,-1,-1,-1,45,46,47},
+                                    {-1,-1,-1,-1,-1,-1,-1,-1,-1,48,49,50},
+                                    {-1,-1,-1,-1,-1,-1,-1,-1,-1,51,52,53}};
+#endif
 
-    int ntiles = 6;
     ta_create(MPI_COMM_WORLD, ntiles, count, &g_a);
     ta_create(MPI_COMM_WORLD, ntiles, count, &g_b);
     ta_create(MPI_COMM_WORLD, ntiles, count, &g_c);
@@ -59,10 +77,10 @@ int main(int argc, char * argv[])
     long counter = 0;
     long taskid  = 0;
     cntr_fadd(nxtval, 1, &counter);
-    for (int i=0; i<4; i++) {
-      for (int j=0; j<4; j++) {
+    for (int i=0; i<tilesdim; i++) {
+      for (int j=0; j<tilesdim; j++) {
         if (block_offset[i][j] >= 0) {
-          for (int k=0; k<4; k++) {
+          for (int k=0; k<tilesdim; k++) {
             if ((block_offset[i][k] >= 0) && (block_offset[k][j] >= 0)) {
               if (counter==taskid) {
                 printf("rank %d counter %ld taskid %ld (%d,%d,%d)\n", me, counter, taskid, i, j, k); fflush(stdout);
@@ -72,12 +90,14 @@ int main(int argc, char * argv[])
                 ta_get_tile(g_a, block_offset[i][k], t_a);
                 ta_get_tile(g_b, block_offset[k][j], t_b);
 
+                matmul(tilesize, tilesize, tilesize, t_a, t_b, t_c, false);
+
                 char label[8];
                 sprintf(label, "%d", me);
                 ta_print_tile(label, count, t_a);
                 ta_print_tile(label, count, t_b);
+                ta_print_tile(label, count, t_c);
 
-                matmul(tilesize, tilesize, tilesize, t_a, t_b, t_c, false);
                 ta_sum_tile(g_c, block_offset[i][j], t_c);
                 cntr_fadd(nxtval, 1, &counter);
               }
