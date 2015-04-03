@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 
 /* dgemm_ is common, so default to it and let the user override if necessary */
 #ifndef DGEMM_SYMBOL
@@ -13,4 +14,4 @@
     void DGEMM_SYMBOL(char* , char* ,CONST int32_t* , CONST int32_t* , CONST int32_t* , CONST double* , CONST double* , CONST int32_t* , CONST double* , CONST int32_t* , CONST double* , double* , CONST int32_t* );
 #endif
 
-void matmul(int m, int n, int k, const double * restrict a, const double * restrict b, double * restrict c);
+void matmul(int m, int n, int k, const double * restrict a, const double * restrict b, double * restrict c, bool accumulate);

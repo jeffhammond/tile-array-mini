@@ -1,6 +1,8 @@
 #include <unistd.h> /* getpagesize() */
 #include <math.h>
 
+#include "tile-blas.h"
+
 #include "tile-array.h"
 
 int main(int argc, char * argv[])
@@ -16,7 +18,8 @@ int main(int argc, char * argv[])
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    size_t count = (argc>1) ? atol(argv[1]) : 1+2*getpagesize();
+    int tilesize = (argc>1) ? atoi(argv[1]) : 200; 
+    size_t count = tilesize*tilesize;
 
     ta_t g_a, g_b, g_c;
 
@@ -49,37 +52,48 @@ int main(int argc, char * argv[])
 
     MPI_Barrier(MPI_COMM_WORLD);
 
+    double * t_a = malloc(count * sizeof(double));
+    double * t_b = malloc(count * sizeof(double));
+    double * t_c = malloc(count * sizeof(double));
+
     long counter = 0;
     long taskid  = 0;
     cntr_fadd(nxtval, 1, &counter);
     for (int i=0; i<4; i++) {
       for (int j=0; j<4; j++) {
-        for (int k=0; k<4; k++) {
-          if ((block_offset[i][j] >= 0) &&
-              (block_offset[i][k] >= 0) &&
-              (block_offset[k][j] >= 0)) {
-            if (counter==taskid) {
-              printf("rank %d counter %ld taskid %ld (%d,%d,%d)\n", me, counter, taskid, i, j, k); fflush(stdout);
-              double * t_a = malloc(count * sizeof(double));
-              double * t_b = malloc(count * sizeof(double));
-              double * t_c = malloc(count * sizeof(double));
-              ta_get_tile(g_a, block_offset[i][k], t_a);
-              ta_get_tile(g_b, block_offset[k][j], t_b);
-              for (size_t p=0; p<count; p++) t_c[p] = t_a[p] * t_b[p];
-              ta_sum_tile(g_c, block_offset[i][j], t_c);
-              free(t_a);
-              free(t_b);
-              free(t_c);
-              cntr_fadd(nxtval, 1, &counter);
+        if (block_offset[i][j] >= 0) {
+          for (int k=0; k<4; k++) {
+            if ((block_offset[i][k] >= 0) && (block_offset[k][j] >= 0)) {
+              if (counter==taskid) {
+                printf("rank %d counter %ld taskid %ld (%d,%d,%d)\n", me, counter, taskid, i, j, k); fflush(stdout);
+                memset(t_a, 0, count*sizeof(double));
+                memset(t_b, 0, count*sizeof(double));
+                memset(t_c, 0, count*sizeof(double));
+                ta_get_tile(g_a, block_offset[i][k], t_a);
+                ta_get_tile(g_b, block_offset[k][j], t_b);
+
+                char label[8];
+                sprintf(label, "%d", me);
+                ta_print_tile(label, count, t_a);
+                ta_print_tile(label, count, t_b);
+
+                matmul(tilesize, tilesize, tilesize, t_a, t_b, t_c, false);
+                ta_sum_tile(g_c, block_offset[i][j], t_c);
+                cntr_fadd(nxtval, 1, &counter);
+              }
+              taskid++;
             }
-            taskid++;
           }
         }
       }
     }
     ta_sync_array(g_c);
 
-    if (count<100) ta_print_array(g_c);
+    if (tilesize<50) ta_print_array(g_c);
+
+    free(t_a);
+    free(t_b);
+    free(t_c);
 
     cntr_destroy(&nxtval);
 

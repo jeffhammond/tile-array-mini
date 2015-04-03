@@ -35,6 +35,8 @@ typedef ta_t cntr_t;
 int ta_create(MPI_Comm comm, int ntiles, size_t tilesize, ta_t * tilearray);
 int ta_destroy(ta_t * tilearray);
 
+void ta_print_tile(char * label, size_t n, const double * restrict ptr);
+
 int ta_memset_array(ta_t tilearray, double value);
 int ta_print_array(ta_t tilearray);
 int ta_sync_array(ta_t tilearray);

@@ -117,6 +117,14 @@ size_t ta_get_tilesize(ta_t tilearray)
 
 /* DATA PARALLEL OPS */
 
+void ta_print_tile(char * label, size_t n, const double * restrict ptr)
+{
+    for (size_t i=0; i<n; i++) {
+        printf("%s: [%ld]=%lf\n", label, i, ptr[i]);
+    }
+    fflush(stdout);
+}
+
 int ta_print_array(ta_t tilearray)
 {
     int comm_rank;
@@ -131,9 +139,9 @@ int ta_print_array(ta_t tilearray)
     printf("local_ntiles = %d \n", tilearray.local_ntiles);
     size_t n = (tilearray.tilesize) * (tilearray.local_ntiles);
     printf("%d: printing %ld\n", comm_rank, n);
-    for (size_t i=0; i<n; i++) {
-        printf("%d: [%ld]=%lf\n", comm_rank, i, ptr[i]);
-    }
+    char label[8];
+    sprintf(label, "%d", comm_rank);
+    ta_print_tile(label, n, ptr);
     fflush(stdout);
 
 #ifdef TA_COMM_DUP
