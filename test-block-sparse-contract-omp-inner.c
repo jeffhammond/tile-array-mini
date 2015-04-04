@@ -98,37 +98,27 @@ int main(int argc, char * argv[])
     ta_memset_array(g_a, 1.0);
     ta_memset_array(g_b, 1.0);
     ta_memset_array(g_c, 0.0);
-
-    OMP_PARALLEL
+ 
     {
-      int tid = omp_get_thread_num();
       long counter = 0;
       long taskid  = 0;
       cntr_t nxtval;
-      PROTECT_MPI
-      {
-        cntr_create(MPI_COMM_WORLD, &nxtval);
-        if (me==0 && tid==0) cntr_zero(nxtval);
-      }
-      OMP_BARRIER
-      PROTECT_MPI
-      {
-        MPI_Barrier(MPI_COMM_WORLD);
-        cntr_fadd(nxtval, 1, &counter);
-      }
+      cntr_create(MPI_COMM_WORLD, &nxtval);
+      if (me==0) cntr_zero(nxtval);
+      MPI_Barrier(MPI_COMM_WORLD);
+      cntr_fadd(nxtval, 1, &counter);
 
       double * t_a = malloc(count * sizeof(double)); assert(t_a!=NULL);
       double * t_b = malloc(count * sizeof(double)); assert(t_b!=NULL);
       double * t_c = malloc(count * sizeof(double)); assert(t_c!=NULL);
 
-      OMP_FOR2
       for (int i=0; i<tilesdim; i++) {
         for (int j=0; j<tilesdim; j++) {
           if (block_offset[i][j] >= 0) {
             if (counter==taskid) {
 #if DEBUG_LEVEL>=1
-              printf("rank %d thread %d counter %ld taskid %ld (%d,%d,*)\n", 
-                      me, tid, counter, taskid, i, j); fflush(stdout);
+              printf("rank %d counter %ld taskid %ld (%d,%d,*)\n", 
+                      me, counter, taskid, i, j); fflush(stdout);
 #endif
               memset(t_c, 0, count*sizeof(double));
               for (int k=0; k<tilesdim; k++) {
@@ -167,11 +157,8 @@ int main(int argc, char * argv[])
       free(t_a);
       free(t_b);
       free(t_c);
-      PROTECT_MPI
-      {
-        cntr_destroy(&nxtval);
-      }
-    } /* end OMP_PARALLEL */
+      cntr_destroy(&nxtval);
+    }
     ta_sync_array(g_c);
 
 #if DEBUG_LEVEL>=3
