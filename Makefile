@@ -1,7 +1,7 @@
-CC     := cc
-CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp
-#CC     := /opt/mpich/dev/intel/debug/bin/mpicc
-#CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp -Wl,-no_pie
+#CC     := cc
+#CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp
+CC     := /opt/mpich/dev/intel/debug/bin/mpicc
+CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp -Wl,-no_pie
 #CC     := /opt/mpich/dev/clang/debug/bin/mpicc
 #CFLAGS := -g3 -Wall -O2 -std=c99
 
