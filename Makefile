@@ -7,7 +7,7 @@ CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp -Wl,-no_pie
 # 1 = task scheduling
 # 2 = matrix elements
 # 3 = array elements
-CFLAGS += -DDEBUG_LEVEL=2
+CFLAGS += -DDEBUG_LEVEL=0
 
 LIBS=-mkl=sequential
 OBJS=tile-array.o tile-blas.o

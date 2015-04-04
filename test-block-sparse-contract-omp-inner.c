@@ -20,7 +20,7 @@
 #define OMP_FOR3          _Pragma("omp for collapse(3) schedule(dynamic,1)")
 #define OMP_BARRIER       _Pragma("omp barrier")
 
-#define SERIALIZE_MPI
+//#define SERIALIZE_MPI
 
 #ifdef SERIALIZE_MPI
 #define PROTECT_MPI _Pragma("omp critical")
