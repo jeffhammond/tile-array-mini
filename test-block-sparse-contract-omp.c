@@ -1,7 +1,3 @@
-#include <unistd.h> /* getpagesize() */
-#include <math.h>
-#include <assert.h>
-
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -25,8 +21,6 @@
 #else
 #define PROTECT_MPI
 #endif
-
-#include "tile-blas.h"
 
 #include "tile-array.h"
 

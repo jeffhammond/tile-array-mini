@@ -1,9 +1,5 @@
 #include <unistd.h> /* getpagesize() */
 #include <math.h>
-#include <assert.h>
-
-#include "tile-blas.h"
-
 #include "tile-array.h"
 
 int main(int argc, char * argv[])

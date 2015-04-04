@@ -4,9 +4,12 @@
 #include <stddef.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 #include <unistd.h>
 
 #include <mpi.h>
+
+#include "tile-blas.h"
 
 //#define TA_DEBUG
 #define TA_COMM_DUP

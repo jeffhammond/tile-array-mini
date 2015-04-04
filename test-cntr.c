@@ -1,6 +1,3 @@
-#include <unistd.h> /* getpagesize() */
-#include <math.h>
-
 #ifdef __INTEL_COMPILER
 #define PRAGMA_NOVECTOR _Pragma("novector")
 #else

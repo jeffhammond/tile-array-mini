@@ -1,5 +1,3 @@
-#include <math.h>
-
 #include "tile-array.h"
 
 int main(int argc, char * argv[])
