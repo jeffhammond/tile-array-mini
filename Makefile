@@ -11,7 +11,11 @@ CFLAGS += -DDEBUG_LEVEL=2
 
 LIBS=-mkl=sequential
 OBJS=tile-array.o tile-blas.o
-TESTS=test-basic.x test-cntr.x test-daxpy.x test-block-sparse-fill.x test-block-sparse-contract.x test-block-sparse-contract-omp.x
+TESTS=test-basic.x test-cntr.x test-daxpy.x
+TESTS+=test-block-sparse-fill.x
+TESTS+=test-block-sparse-contract.x
+TESTS+=test-block-sparse-contract-omp.x
+TESTS+=test-block-sparse-contract-omp-inner.x
 
 all: $(TESTS)
 
