@@ -13,10 +13,12 @@
 #include <mkl.h>
 #endif
 
-#define OMP_PARALLEL _Pragma("omp parallel")
-#define OMP_FOR      _Pragma("omp for schedule(dynamic,1)")
-#define OMP_FOR2     _Pragma("omp for collapse(2) schedule(dynamic,1)")
-#define OMP_BARRIER  _Pragma("omp barrier")
+#define OMP_PARALLEL      _Pragma("omp parallel")
+#define OMP_PARALLEL_FOR  _Pragma("omp parallel for schedule(dynamic,1)")
+#define OMP_FOR           _Pragma("omp for schedule(dynamic,1)")
+#define OMP_FOR2          _Pragma("omp for collapse(2) schedule(dynamic,1)")
+#define OMP_FOR3          _Pragma("omp for collapse(3) schedule(dynamic,1)")
+#define OMP_BARRIER       _Pragma("omp barrier")
 
 #define SERIALIZE_MPI
 
@@ -108,10 +110,6 @@ int main(int argc, char * argv[])
       MPI_Barrier(MPI_COMM_WORLD);
       cntr_fadd(nxtval, 1, &counter);
 
-      double * t_a = malloc(count * sizeof(double)); assert(t_a!=NULL);
-      double * t_b = malloc(count * sizeof(double)); assert(t_b!=NULL);
-      double * t_c = malloc(count * sizeof(double)); assert(t_c!=NULL);
-
       for (int i=0; i<tilesdim; i++) {
         for (int j=0; j<tilesdim; j++) {
           if (block_offset[i][j] >= 0) {
@@ -120,43 +118,46 @@ int main(int argc, char * argv[])
               printf("rank %d counter %ld taskid %ld (%d,%d,*)\n", 
                       me, counter, taskid, i, j); fflush(stdout);
 #endif
-              memset(t_c, 0, count*sizeof(double));
-              for (int k=0; k<tilesdim; k++) {
-                if ((block_offset[i][k] >= 0) && (block_offset[k][j] >= 0)) {
-                  memset(t_a, 0, count*sizeof(double));
-                  memset(t_b, 0, count*sizeof(double));
-                  PROTECT_MPI
-                  {
-                      ta_get_tile(g_a, block_offset[i][k], t_a);
-                      ta_get_tile(g_b, block_offset[k][j], t_b);
-                  }
-                  matmul(tilesize, tilesize, tilesize, t_a, t_b, t_c, true);
-#if DEBUG_LEVEL>=3
-                  char label[8];
-                  sprintf(label, "%d,%d", me, tid);
-                  ta_print_tile(label, count, t_a);
-                  ta_print_tile(label, count, t_b);
-#endif
-                } /* end if (i,k) && (k,j) */
-              } /* end k loop */
-#if DEBUG_LEVEL>=3
-              char label[8];
-              sprintf(label, "%d,%d", me, tid);
-              ta_print_tile(label, count, t_c);
-#endif
-              PROTECT_MPI
+              OMP_PARALLEL
               {
-                  ta_sum_tile(g_c, block_offset[i][j], t_c);
-                  cntr_fadd(nxtval, 1, &counter);
-              }
+                double * t_a = malloc(count * sizeof(double)); assert(t_a!=NULL);
+                double * t_b = malloc(count * sizeof(double)); assert(t_b!=NULL);
+                double * t_c = malloc(count * sizeof(double)); assert(t_c!=NULL);
+                OMP_FOR
+                for (int k=0; k<tilesdim; k++) {
+                  if ((block_offset[i][k] >= 0) && (block_offset[k][j] >= 0)) {
+                    memset(t_a, 0, count*sizeof(double));
+                    memset(t_b, 0, count*sizeof(double));
+                    memset(t_c, 0, count*sizeof(double));
+                    PROTECT_MPI
+                    {
+                        ta_get_tile(g_a, block_offset[i][k], t_a);
+                        ta_get_tile(g_b, block_offset[k][j], t_b);
+                    }
+                    matmul(tilesize, tilesize, tilesize, t_a, t_b, t_c, false);
+#if DEBUG_LEVEL>=3
+                    char label[8];
+                    sprintf(label, "%d,%d", me, tid);
+                    ta_print_tile(label, count, t_a);
+                    ta_print_tile(label, count, t_b);
+                    ta_print_tile(label, count, t_c);
+#endif
+                    PROTECT_MPI
+                    {
+                        ta_sum_tile(g_c, block_offset[i][j], t_c);
+                    }
+                  } /* end if (i,k) && (k,j) */
+                } /* end k loop */
+                free(t_a);
+                free(t_b);
+                free(t_c);
+              } /* OMP_PARALLEL_FOR */
+              cntr_fadd(nxtval, 1, &counter);
             } /* end if counter */
             taskid++;
           } /* end if (i,j) */
         } /* end j loop */
       } /* end i loop */
-      free(t_a);
-      free(t_b);
-      free(t_c);
       cntr_destroy(&nxtval);
     }
     ta_sync_array(g_c);
