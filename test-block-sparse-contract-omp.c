@@ -16,9 +16,12 @@
 #define OMP_PARALLEL _Pragma("omp parallel")
 #define OMP_FOR      _Pragma("omp for schedule(dynamic,1)")
 #define OMP_FOR2     _Pragma("omp for collapse(2) schedule(dynamic,1)")
+#define OMP_BARRIER  _Pragma("omp barrier")
+
+#define SERIALIZE_MPI
 
 #ifdef SERIALIZE_MPI
-#define PROTECT_MPI _Pragma("omp critical mpi")
+#define PROTECT_MPI _Pragma("omp critical")
 #else
 #define PROTECT_MPI
 #endif
@@ -98,15 +101,20 @@ int main(int argc, char * argv[])
 
     OMP_PARALLEL
     {
+      int tid = omp_get_thread_num();
       long counter = 0;
       long taskid  = 0;
       cntr_t nxtval;
       PROTECT_MPI
       {
         cntr_create(MPI_COMM_WORLD, &nxtval);
-        if (me==0 && omp_get_thread_num()==0) cntr_zero(nxtval);
-        cntr_fadd(nxtval, 1, &counter);
+        if (me==0 && tid==0) cntr_zero(nxtval);
+      }
+      OMP_BARRIER
+      PROTECT_MPI
+      {
         MPI_Barrier(MPI_COMM_WORLD);
+        cntr_fadd(nxtval, 1, &counter);
       }
 
       double * t_a = malloc(count * sizeof(double)); assert(t_a!=NULL);
@@ -117,45 +125,42 @@ int main(int argc, char * argv[])
       for (int i=0; i<tilesdim; i++) {
         for (int j=0; j<tilesdim; j++) {
           if (block_offset[i][j] >= 0) {
-            for (int k=0; k<tilesdim; k++) {
-              if ((block_offset[i][k] >= 0) && (block_offset[k][j] >= 0)) {
-                if (counter==taskid) {
-#if DEBUG_LEVEL>1
-                  printf("rank %d thread %d counter %ld taskid %ld (%d,%d,%d)\n", 
-                          me, omp_get_thread_num(), counter, taskid, i, j, k); fflush(stdout);
+            if (counter==taskid) {
+#if DEBUG_LEVEL>=1
+              printf("rank %d thread %d counter %ld taskid %ld (%d,%d,*)\n", 
+                      me, tid, counter, taskid, i, j); fflush(stdout);
 #endif
+              memset(t_c, 0, count*sizeof(double));
+              for (int k=0; k<tilesdim; k++) {
+                if ((block_offset[i][k] >= 0) && (block_offset[k][j] >= 0)) {
                   memset(t_a, 0, count*sizeof(double));
                   memset(t_b, 0, count*sizeof(double));
-                  memset(t_c, 0, count*sizeof(double));
-                 
                   PROTECT_MPI
                   {
                       ta_get_tile(g_a, block_offset[i][k], t_a);
                       ta_get_tile(g_b, block_offset[k][j], t_b);
                   }
-                 
-                  matmul(tilesize, tilesize, tilesize, t_a, t_b, t_c, false);
-
-#if DEBUG_LEVEL>2
+                  matmul(tilesize, tilesize, tilesize, t_a, t_b, t_c, true);
+#if DEBUG_LEVEL>=3
                   char label[8];
-                  sprintf(label, "%d,%d", me, omp_get_thread_num());
-                  PROTECT_MPI
-                  {
-                      ta_print_tile(label, count, t_a);
-                      ta_print_tile(label, count, t_b);
-                      ta_print_tile(label, count, t_c);
-                  }
+                  sprintf(label, "%d,%d", me, tid);
+                  ta_print_tile(label, count, t_a);
+                  ta_print_tile(label, count, t_b);
 #endif
-
-                  PROTECT_MPI
-                  {
-                      ta_sum_tile(g_c, block_offset[i][j], t_c);
-                      cntr_fadd(nxtval, 1, &counter);
-                  }
-                } /* end if counter */
-                taskid++;
-              } /* end if (i,k) && (k,j) */
-            } /* end k loop */
+                } /* end if (i,k) && (k,j) */
+              } /* end k loop */
+#if DEBUG_LEVEL>=3
+              char label[8];
+              sprintf(label, "%d,%d", me, tid);
+              ta_print_tile(label, count, t_c);
+#endif
+              PROTECT_MPI
+              {
+                  ta_sum_tile(g_c, block_offset[i][j], t_c);
+                  cntr_fadd(nxtval, 1, &counter);
+              }
+            } /* end if counter */
+            taskid++;
           } /* end if (i,j) */
         } /* end j loop */
       } /* end i loop */
@@ -169,10 +174,10 @@ int main(int argc, char * argv[])
     } /* end OMP_PARALLEL */
     ta_sync_array(g_c);
 
-#if DEBUG_LEVEL>2
+#if DEBUG_LEVEL>=3
     if (tilesize<50) ta_print_array(g_c);
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
 
     /* begin correctness checking */
 
@@ -227,24 +232,28 @@ int main(int argc, char * argv[])
           }
         }
         printf("%zu errors\n", errors);
+#if DEBUG_LEVEL>=2
+        for (int i=0; i<tilesdim; i++) {
+          for (int j=0; j<tilesdim; j++) {
+            /* print, including the zeros */
+            for (int ii=0; ii<tilesize; ii++) {
+              for (int jj=0; jj<tilesize; jj++) {
+                  const int row = i*tilesize + ii;
+                  const int col = j*tilesize + jj;
+                  printf("m_a(%d,%d) = %lf\n", row, col, m_a[row*matrixdim+col]);
+              }
+            }
+            fflush(stdout);
+          }
+        }
+#endif
+        printf("%zu errors\n", errors); fflush(stdout);
         free(m_a);
         free(m_b);
         free(m_c);
         free(m_d);
-        assert(errors==0);
       }
     }
-#if 0
-              /* print, including the zeros */
-              for (int ii=0; ii<tilesize; ii++) {
-                for (int jj=0; jj<tilesize; jj++) {
-                    const int row = i*tilesize + ii;
-                    const int col = j*tilesize + jj;
-                    printf("m_a(%d,%d) = %lf\n", row, col, m_a[row*matrixdim+col]);
-                }
-              }
-              fflush(stdout);
-#endif
 
     MPI_Barrier(MPI_COMM_WORLD);
 
