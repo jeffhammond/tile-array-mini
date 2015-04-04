@@ -4,11 +4,6 @@
 #error You must use OpenMP with this code!
 #endif
 
-/* We assume that MKL is used if Intel compilers are... */
-#ifdef __INTEL_COMPILER
-#include <mkl.h>
-#endif
-
 #define OMP_PARALLEL _Pragma("omp parallel")
 #define OMP_FOR      _Pragma("omp for schedule(dynamic,1)")
 #define OMP_FOR2     _Pragma("omp for collapse(2) schedule(dynamic,1)")
