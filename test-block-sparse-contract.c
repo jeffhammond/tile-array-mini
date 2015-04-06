@@ -59,19 +59,21 @@ int main(int argc, char * argv[])
     ta_memset_array(g_b, 1.0);
     ta_memset_array(g_c, 0.0);
 
-    cntr_t nxtval;
-    cntr_create(MPI_COMM_WORLD, &nxtval);
-    if (me==0) cntr_zero(nxtval);
-
-    MPI_Barrier(MPI_COMM_WORLD);
-
     double * t_a = malloc(count * sizeof(double)); assert(t_a!=NULL);
     double * t_b = malloc(count * sizeof(double)); assert(t_b!=NULL);
     double * t_c = malloc(count * sizeof(double)); assert(t_c!=NULL);
 
+
     long counter = 0;
     long taskid  = 0;
+    cntr_t nxtval;
+    cntr_create(MPI_COMM_WORLD, &nxtval);
+    if (me==0) cntr_zero(nxtval);
+    MPI_Barrier(MPI_COMM_WORLD);
+    double t0    = MPI_Wtime();
+    double flops = 0.0;
     cntr_fadd(nxtval, 1, &counter);
+
     for (int i=0; i<tilesdim; i++) {
       for (int j=0; j<tilesdim; j++) {
         if (block_offset[i][j] >= 0) {
@@ -88,6 +90,7 @@ int main(int argc, char * argv[])
                 ta_get_tile(g_b, block_offset[k][j], t_b);
 
                 matmul(tilesize, tilesize, tilesize, t_a, t_b, t_c, false);
+                flops += (2.*tilesize*1.*tilesize*1.*tilesize);
 
 #if DEBUG_LEVEL>2
                 char label[8];
@@ -107,6 +110,27 @@ int main(int argc, char * argv[])
       }
     }
     ta_sync_array(g_c);
+    MPI_Barrier(MPI_COMM_WORLD);
+    {
+      double t1 = MPI_Wtime();
+      double dt=t1-t0;
+      double tmin, tmax, tavg;
+      double floprate = flops/dt;
+      double fmin, fmax, favg;
+      MPI_Allreduce(&dt, &tmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+      MPI_Allreduce(&dt, &tmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+      MPI_Allreduce(&dt, &tavg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      tavg /= np;
+      MPI_Allreduce(&floprate, &fmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+      MPI_Allreduce(&floprate, &fmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+      MPI_Allreduce(&floprate, &favg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+      favg /= np;
+      if (me==0) {
+          printf("time (s)   min=%lf max=%lf avg=%lf \n", tmin, tmax, tavg);
+          printf("gigaflop/s min=%lf max=%lf avg=%lf \n", 1.e-9*fmin, 1.e-9*fmax, 1.e-9*favg);
+          fflush(stdout);
+      }
+    }
 
 #if DEBUG_LEVEL>2
     if (tilesize<50) ta_print_array(g_c);
@@ -163,7 +187,9 @@ int main(int argc, char * argv[])
         free(t_a);
         free(t_b);
         free(t_c);
+        double t0 = MPI_Wtime();
         matmul(matrixdim, matrixdim, matrixdim, m_a, m_b, m_d, false);
+        double t1 = MPI_Wtime();
         size_t errors = 0;
         for (int i=0; i<matrixdim; i++) {
           for (int j=0; j<matrixdim; j++) {
@@ -171,6 +197,8 @@ int main(int argc, char * argv[])
           }
         }
         printf("%zu errors\n", errors);
+        printf("verification DGEMM took %lf seconds\n", t1-t0);
+        fflush(stdout);
         free(m_a);
         free(m_b);
         free(m_c);
