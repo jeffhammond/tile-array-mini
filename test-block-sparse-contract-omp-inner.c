@@ -70,7 +70,7 @@ int main(int argc, char * argv[])
                                   { 2, 3,-1,-1},
                                   {-1,-1, 4,-1},
                                   {-1,-1,-1, 5}};
-#else
+#elif PROBLEM_SIZE==4
     const int ntiles = 54;
     const int tilesdim = 12;
     ssize_t block_offset[12][12] = {{ 0, 1, 2, 3, 4, 5,-1,-1,-1,-1,-1,-1},
@@ -85,6 +85,46 @@ int main(int argc, char * argv[])
                                     {-1,-1,-1,-1,-1,-1,-1,-1,-1,45,46,47},
                                     {-1,-1,-1,-1,-1,-1,-1,-1,-1,48,49,50},
                                     {-1,-1,-1,-1,-1,-1,-1,-1,-1,51,52,53}};
+#else
+    const int tilesdim = (argc>1) ? atoi(argv[2]) : 12;
+    assert((tilesdim%4)==0);
+    ssize_t block_offset[tilesdim][tilesdim];
+    for (int i=0; i<tilesdim; i++)
+      for (int j=0; j<tilesdim; j++) {
+        block_offset[i][j] = -1;
+      }
+    ssize_t b = 0;
+    for (int i=0; i<tilesdim/2; i++)
+      for (int j=0; j<tilesdim/2; j++) {
+        block_offset[i][j] = b++;
+      }
+    for (int i=tilesdim/2; i<(3*tilesdim/4); i++)
+      for (int j=tilesdim/2; j<(3*tilesdim/4); j++) {
+        block_offset[i][j] = b++;
+      }
+    for (int i=(3*tilesdim/4); i<tilesdim; i++)
+      for (int j=(3*tilesdim/4); j<tilesdim; j++) {
+        block_offset[i][j] = b++;
+      }
+    const int ntiles = b;
+# if DEBUG_LEVEL>=1
+    if (me==0) {
+      printf("{");
+      for (int i=0; i<tilesdim; i++) {
+        if (i>0) printf(" ");
+        printf("{");
+        for (int j=0; j<tilesdim; j++) {
+          if      (b<10)    printf("%1ld", block_offset[i][j]);
+          else if (b<100)   printf("%2ld", block_offset[i][j]);
+          else if (b<1000)  printf("%3ld", block_offset[i][j]);
+          if (j!=(tilesdim-1)) printf(",");
+        }
+        printf("}");
+        if (i!=(tilesdim-1)) printf(",\n");
+      }
+      printf("}\n");
+    }
+# endif
 #endif
 
     ta_create(MPI_COMM_WORLD, ntiles, count, &g_a);

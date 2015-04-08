@@ -11,7 +11,7 @@ CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp -Wl,-no_pie
 # 1 = task scheduling
 # 2 = matrix elements
 # 3 = array elements
-CFLAGS += -DDEBUG_LEVEL=0
+CFLAGS += -DDEBUG_LEVEL=1
 
 # Need this as CFLAGS not LIBS to get header path
 CFLAGS+=-mkl=parallel
