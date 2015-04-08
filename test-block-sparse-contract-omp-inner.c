@@ -46,13 +46,6 @@ int main(int argc, char * argv[])
 
     int tilesize = (argc>1) ? atoi(argv[1]) : 200; 
     size_t count = tilesize*tilesize;
-    if (me==0) {
-        printf("%d MPI procs, %d OpenMP threads\n", np, omp_get_max_threads());
-        printf("tilesize = %d\n", tilesize);
-        fflush(stdout);
-    }
-
-    ta_t g_a, g_b, g_c;
 
 #if PROBLEM_SIZE==4
     /* A block-sparse matrix with the following fill:
@@ -126,6 +119,14 @@ int main(int argc, char * argv[])
     }
 # endif
 #endif
+
+    if (me==0) {
+        printf("%d MPI procs, %d OpenMP threads\n", np, omp_get_max_threads());
+        printf("tilesdim = %d ntiles = %d tilesize = %d\n", tilesdim, ntiles, tilesize);
+        fflush(stdout);
+    }
+
+    ta_t g_a, g_b, g_c;
 
     ta_create(MPI_COMM_WORLD, ntiles, count, &g_a);
     ta_create(MPI_COMM_WORLD, ntiles, count, &g_b);
