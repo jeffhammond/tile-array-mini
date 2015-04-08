@@ -14,6 +14,7 @@ int main(int argc, char * argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 
     size_t count = (argc>1) ? atol(argv[1]) : 4097;
+    if (me==0) printf("count = %ld\n", count);
 
     ta_t g_x;
 
@@ -62,6 +63,8 @@ int main(int argc, char * argv[])
     cntr_destroy(&nxtval);
 
     ta_destroy(&g_x);
+
+    if (me==0) printf("SUCCESS\n");
 
     MPI_Finalize();
     return 0;

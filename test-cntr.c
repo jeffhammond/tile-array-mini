@@ -19,6 +19,7 @@ int main(int argc, char * argv[])
 
     /* times to increment counter */
     int reps = (argc>1) ? atoi(argv[1]) : 10000;
+    if (me==0) printf("reps = %ld\n", reps);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -42,6 +43,8 @@ int main(int argc, char * argv[])
     }
 
     cntr_destroy(&nxtval);
+
+    if (me==0) printf("SUCCESS\n");
 
     MPI_Finalize();
     return 0;

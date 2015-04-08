@@ -44,6 +44,7 @@ int main(int argc, char * argv[])
 
     int tilesize = (argc>1) ? atoi(argv[1]) : 200; 
     size_t count = tilesize*tilesize;
+    if (me==0) printf("tilesize = %ld\n", tilesize);
 
     ta_t g_a, g_b, g_c;
 
@@ -251,6 +252,8 @@ int main(int argc, char * argv[])
     ta_destroy(&g_a);
     ta_destroy(&g_b);
     ta_destroy(&g_c);
+
+    if (me==0) printf("SUCCESS\n");
 
     MPI_Finalize();
     return 0;
