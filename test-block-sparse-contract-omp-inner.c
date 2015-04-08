@@ -185,7 +185,7 @@ int main(int argc, char * argv[])
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    if (me==0) {
+    if (me==0 && getenv("TILE_ARRAY_VERIFY")!=NULL) {
       const int matrixdim = tilesdim * tilesize;
       double * restrict m_a = calloc(matrixdim*matrixdim*sizeof(double),sizeof(double));
       double * restrict m_b = calloc(matrixdim*matrixdim*sizeof(double),sizeof(double));

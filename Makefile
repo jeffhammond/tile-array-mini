@@ -1,9 +1,11 @@
 #CC     := cc
 #CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp
-CC     := /opt/mpich/dev/intel/debug/bin/mpicc
-CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp -Wl,-no_pie
+#CC     := /opt/mpich/dev/intel/debug/bin/mpicc
+#CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp -Wl,-no_pie
 #CC     := /opt/mpich/dev/clang/debug/bin/mpicc
 #CFLAGS := -g3 -Wall -O2 -std=c99
+CC	:= mpiicc
+CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp
 
 # DEBUG_LEVEL (inclusive with lower levels)
 # 1 = task scheduling
@@ -12,7 +14,7 @@ CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp -Wl,-no_pie
 CFLAGS += -DDEBUG_LEVEL=0
 
 # Need this as CFLAGS not LIBS to get header path
-CFLAGS+=-mkl=sequential
+CFLAGS+=-mkl=parallel
 
 OBJS=tile-array.o tile-blas.o
 TESTS=test-basic.x test-cntr.x test-daxpy.x
