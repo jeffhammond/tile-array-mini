@@ -116,19 +116,15 @@ int main(int argc, char * argv[])
       double t1 = MPI_Wtime();
       double dt=t1-t0;
       double tmin, tmax, tavg;
-      double floprate = flops/dt;
-      double fmin, fmax, favg;
       MPI_Allreduce(&dt, &tmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
       MPI_Allreduce(&dt, &tmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
       MPI_Allreduce(&dt, &tavg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       tavg /= np;
-      MPI_Allreduce(&floprate, &fmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-      MPI_Allreduce(&floprate, &fmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-      MPI_Allreduce(&floprate, &favg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-      favg /= np;
+      double allflops;
+      MPI_Allreduce(&flops, &allflops, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       if (me==0) {
           printf("time (s)   min=%lf max=%lf avg=%lf \n", tmin, tmax, tavg);
-          printf("gigaflop/s min=%lf max=%lf avg=%lf \n", 1.e-9*np*fmin, 1.e-9*np*fmax, 1.e-9*np*favg);
+          printf("gigaflop/s min=%lf max=%lf avg=%lf \n", 1.e-9*allflops/tmax, 1.e-9*allflops/tmin, 1.e-9*allflops/tavg);
           fflush(stdout);
       }
     }
