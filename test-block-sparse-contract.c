@@ -15,7 +15,11 @@ int main(int argc, char * argv[])
 
     int tilesize = (argc>1) ? atoi(argv[1]) : 200; 
     size_t count = tilesize*tilesize;
-    if (me==0) printf("tilesize = %d\n", tilesize);
+    if (me==0) {
+        printf("%d MPI procs, no OpenMP threads\n", np);
+        printf("tilesize = %d\n", tilesize);
+        fflush(stdout);
+    }
 
     ta_t g_a, g_b, g_c;
 
