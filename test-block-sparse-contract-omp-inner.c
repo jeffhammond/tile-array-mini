@@ -171,7 +171,7 @@ int main(int argc, char * argv[])
       favg /= np;
       if (me==0) {
           printf("time (s)   min=%lf max=%lf avg=%lf \n", tmin, tmax, tavg);
-          printf("gigaflop/s min=%lf max=%lf avg=%lf \n", 1.e-9*fmin, 1.e-9*fmax, 1.e-9*favg);
+          printf("gigaflop/s min=%lf max=%lf avg=%lf \n", 1.e-9*np*fmin, 1.e-9*np*fmax, 1.e-9*np*favg);
           fflush(stdout);
       }
     }
