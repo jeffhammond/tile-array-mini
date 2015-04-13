@@ -63,7 +63,7 @@ int main(int argc, char * argv[])
                                   { 2, 3,-1,-1},
                                   {-1,-1, 4,-1},
                                   {-1,-1,-1, 5}};
-#elif PROBLEM_SIZE==4
+#elif PROBLEM_SIZE==12
     const int ntiles = 54;
     const int tilesdim = 12;
     ssize_t block_offset[12][12] = {{ 0, 1, 2, 3, 4, 5,-1,-1,-1,-1,-1,-1},
