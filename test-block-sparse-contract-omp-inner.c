@@ -1,7 +1,8 @@
 #ifdef _OPENMP
 #include <omp.h>
 #else
-#error You must use OpenMP with this code!
+int omp_get_thread_num(void) { return 0; }
+int omp_get_max_threads(void) { return 1; }
 #endif
 
 #define OMP_PARALLEL      _Pragma("omp parallel")

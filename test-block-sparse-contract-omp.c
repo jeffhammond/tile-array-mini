@@ -1,12 +1,15 @@
 #ifdef _OPENMP
 #include <omp.h>
 #else
-#error You must use OpenMP with this code!
+int omp_get_thread_num(void) { return 0; }
+int omp_get_max_threads(void) { return 1; }
 #endif
 
 #define OMP_PARALLEL _Pragma("omp parallel")
+#define OMP_PARALLEL_FOR  _Pragma("omp parallel for schedule(dynamic,1)")
 #define OMP_FOR      _Pragma("omp for schedule(dynamic,1)")
 #define OMP_FOR2     _Pragma("omp for collapse(2) schedule(dynamic,1)")
+#define OMP_FOR3          _Pragma("omp for collapse(3) schedule(dynamic,1)")
 #define OMP_BARRIER  _Pragma("omp barrier")
 
 #define SERIALIZE_MPI

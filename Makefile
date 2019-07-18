@@ -1,7 +1,8 @@
 #CC     := cc
 #CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp
-CC     := /opt/mpich/dev/intel/debug/bin/mpicc
-CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp -Wl,-no_pie
+CC     := mpicc
+CFLAGS := -g3 -Wall -O2 -std=c99 -Wl,-no_pie
+#CFLAGS := -fopenmp
 #CC     := /opt/mpich/dev/clang/debug/bin/mpicc
 #CFLAGS := -g3 -Wall -O2 -std=c99
 #CC	:= mpiicc
@@ -14,7 +15,8 @@ CFLAGS := -g3 -Wall -O2 -std=c99 -qopenmp -Wl,-no_pie
 CFLAGS += -DDEBUG_LEVEL=1
 
 # Need this as CFLAGS not LIBS to get header path
-CFLAGS+=-mkl=parallel
+#CFLAGS+=-mkl=parallel
+CFLAGS+=-framework Accelerate
 
 OBJS=tile-array.o tile-blas.o
 TESTS=test-basic.x test-cntr.x test-daxpy.x
